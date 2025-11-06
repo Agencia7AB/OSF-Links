@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   Calendar, TrendingUp, Globe, Monitor, BarChart3,
-  ChevronDown, ChevronUp, Download, Clock
+  ChevronDown, ChevronUp, Download, Clock, Users, TrendingUp as PeakIcon, Eye
 } from 'lucide-react';
 import {
-  collection, query, where, getDocs, orderBy, Timestamp
+  collection, query, where, getDocs, orderBy, Timestamp, onSnapshot
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Analytics as AnalyticsType, Video } from '../types';
@@ -24,6 +24,7 @@ interface CountryData {
   country: string;
   countryCode: string;
   clicks: number;
+  percentage: number;
 }
 
 interface DeviceData {
@@ -48,6 +49,9 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
   const [loading, setLoading] = useState(false);
   const [loadingDay, setLoadingDay] = useState(false);
   const [showAllCountries, setShowAllCountries] = useState(false);
+  const [liveUsers, setLiveUsers] = useState(0);
+  const [peakUsers, setPeakUsers] = useState(0);
+  const [totalClicks, setTotalClicks] = useState(0);
 
   const getDateRange = () => {
     const now = new Date();
@@ -148,7 +152,81 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
     loadDayAnalytics();
   }, [selectedDate, selectedVideo]);
 
+  useEffect(() => {
+    const calculateLiveUsers = () => {
+      const now = new Date();
+      const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+
+      const recentUsers = analytics.filter(item => {
+        const timestamp = new Date(item.timestamp);
+        return timestamp >= fiveMinutesAgo;
+      });
+
+      const uniqueUsers = new Set(recentUsers.map(item => item.ip)).size;
+      setLiveUsers(uniqueUsers);
+    };
+
+    const calculatePeakUsers = () => {
+      if (analytics.length === 0) {
+        setPeakUsers(0);
+        return;
+      }
+
+      const timeWindows = new Map<string, Set<string>>();
+
+      analytics.forEach(item => {
+        const timestamp = new Date(item.timestamp);
+        const windowKey = Math.floor(timestamp.getTime() / (5 * 60 * 1000));
+
+        if (!timeWindows.has(windowKey.toString())) {
+          timeWindows.set(windowKey.toString(), new Set());
+        }
+
+        timeWindows.get(windowKey.toString())!.add(item.ip);
+      });
+
+      let maxUsers = 0;
+      timeWindows.forEach(users => {
+        if (users.size > maxUsers) {
+          maxUsers = users.size;
+        }
+      });
+
+      setPeakUsers(maxUsers);
+    };
+
+    calculateLiveUsers();
+    calculatePeakUsers();
+
+    const interval = setInterval(calculateLiveUsers, 30000);
+
+    return () => clearInterval(interval);
+  }, [analytics]);
+
+  useEffect(() => {
+    const loadTotalClicks = async () => {
+      try {
+        let q = query(collection(db, 'analytics'));
+
+        if (selectedVideo !== 'all') {
+          q = query(
+            collection(db, 'analytics'),
+            where('videoId', '==', selectedVideo)
+          );
+        }
+
+        const snapshot = await getDocs(q);
+        setTotalClicks(snapshot.size);
+      } catch (error) {
+        console.error('Erro ao carregar total de cliques:', error);
+      }
+    };
+
+    loadTotalClicks();
+  }, [selectedVideo]);
+
   // Processar dados por país
+  const totalAnalyticsClicks = analytics.length;
   const countryData: CountryData[] = analytics.reduce((acc, item) => {
     const existing = acc.find(c => c.countryCode === item.countryCode);
     if (existing) {
@@ -157,11 +235,17 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
       acc.push({
         country: item.country,
         countryCode: item.countryCode,
-        clicks: 1
+        clicks: 1,
+        percentage: 0
       });
     }
     return acc;
-  }, [] as CountryData[]).sort((a, b) => b.clicks - a.clicks);
+  }, [] as CountryData[])
+    .map(country => ({
+      ...country,
+      percentage: totalAnalyticsClicks > 0 ? (country.clicks / totalAnalyticsClicks) * 100 : 0
+    }))
+    .sort((a, b) => b.clicks - a.clicks);
 
   // Processar dados por dispositivo
   const deviceData: DeviceData[] = analytics.reduce((acc, item) => {
@@ -233,12 +317,13 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
   // Função para baixar CSV dos países
   const downloadCountriesCSV = () => {
     const csvContent = [
-      ['Posição', 'País', 'Código do País', 'Cliques'],
+      ['Posição', 'País', 'Código do País', 'Cliques', 'Porcentagem'],
       ...countryData.map((country, index) => [
         index + 1,
         country.country,
         country.countryCode,
-        country.clicks
+        country.clicks,
+        `${country.percentage.toFixed(2)}%`
       ])
     ].map(row => row.join(',')).join('\n');
 
@@ -513,6 +598,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
                     <th className="text-left py-3 px-4 text-gray-400 font-medium">#</th>
                     <th className="text-left py-3 px-4 text-gray-400 font-medium">País</th>
                     <th className="text-right py-3 px-4 text-gray-400 font-medium">Cliques</th>
+                    <th className="text-right py-3 px-4 text-gray-400 font-medium">%</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -528,6 +614,11 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
                       <td className="py-3 px-4 text-right">
                         <span className="bg-[#00DBD9] text-black px-2 py-1 rounded-full text-sm font-medium">
                           {country.clicks}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <span className="text-gray-300 text-sm">
+                          {country.percentage.toFixed(2)}%
                         </span>
                       </td>
                     </tr>
@@ -546,17 +637,53 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
       )}
 
       {/* Resumo */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-lg border border-gray-800">
-          <div className="text-2xl font-bold text-white">{analytics.length}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="p-4 rounded-lg border border-gray-800 bg-green-900/20">
+          <div className="flex items-center justify-between mb-2">
+            <Users className="text-green-400" size={24} />
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+          </div>
+          <div className="text-3xl font-bold text-white">{liveUsers}</div>
+          <div className="text-gray-400 text-sm">Ao Vivo</div>
+        </div>
+
+        <div className="p-4 rounded-lg border border-gray-800 bg-blue-900/20">
+          <div className="flex items-center justify-between mb-2">
+            <PeakIcon className="text-blue-400" size={24} />
+          </div>
+          <div className="text-3xl font-bold text-white">{peakUsers}</div>
+          <div className="text-gray-400 text-sm">Pico de Usuários</div>
+        </div>
+
+        <div className="p-4 rounded-lg border border-gray-800 bg-[#00DBD9]/10">
+          <div className="flex items-center justify-between mb-2">
+            <Eye className="text-[#00DBD9]" size={24} />
+          </div>
+          <div className="text-3xl font-bold text-white">{totalClicks}</div>
           <div className="text-gray-400 text-sm">Total de Cliques</div>
         </div>
+
         <div className="p-4 rounded-lg border border-gray-800">
-          <div className="text-2xl font-bold text-white">{countryData.length}</div>
+          <div className="flex items-center justify-between mb-2">
+            <BarChart3 className="text-gray-400" size={24} />
+          </div>
+          <div className="text-3xl font-bold text-white">{analytics.length}</div>
+          <div className="text-gray-400 text-sm">Cliques no Período</div>
+        </div>
+
+        <div className="p-4 rounded-lg border border-gray-800">
+          <div className="flex items-center justify-between mb-2">
+            <Globe className="text-gray-400" size={24} />
+          </div>
+          <div className="text-3xl font-bold text-white">{countryData.length}</div>
           <div className="text-gray-400 text-sm">Países Únicos</div>
         </div>
+
         <div className="p-4 rounded-lg border border-gray-800">
-          <div className="text-2xl font-bold text-white">{deviceData.length}</div>
+          <div className="flex items-center justify-between mb-2">
+            <Monitor className="text-gray-400" size={24} />
+          </div>
+          <div className="text-3xl font-bold text-white">{deviceData.length}</div>
           <div className="text-gray-400 text-sm">Tipos de Dispositivo</div>
         </div>
       </div>
