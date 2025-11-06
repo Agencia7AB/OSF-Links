@@ -144,6 +144,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ slug }) => {
   useEffect(() => {
     if (!video) return;
 
+    // Feature buttons não devem aparecer quando o vídeo está inativo
+    if (!video.isActive) {
+      setFeatureButton(null);
+      return;
+    }
+
     const q = query(
       collection(db, "featureButtons"),
       where("videoId", "==", video.id),
@@ -166,7 +172,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ slug }) => {
     });
 
     return unsubscribe;
-  }, [video]);
+  }, [video?.id, video?.isActive]);
 
   /** ------- Ouve em TEMPO REAL os likes do vídeo ------- */
   useEffect(() => {

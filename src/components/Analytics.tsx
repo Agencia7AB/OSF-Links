@@ -172,8 +172,8 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
       acc.push({
         name: item.device,
         value: 1,
-        color: item.device === 'Mobile' ? '#ef4444' : 
-               item.device === 'Desktop' ? '#3b82f6' : '#10b981'
+        color: item.device === 'Mobile' ? '#00DBD9' : 
+               item.device === 'Desktop' ? '#DBDB00' : '#10b981'
       });
     }
     return acc;
@@ -275,7 +275,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <h2 className="text-2xl font-bold text-white flex items-center">
-          <BarChart3 className="mr-3 text-red-500" />
+          <BarChart3 className="mr-3 text-[#00DBD9]" />
           Analytics
         </h2>
         
@@ -284,7 +284,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
           <select
             value={selectedVideo}
             onChange={(e) => setSelectedVideo(e.target.value)}
-            className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#00DBD9]"
           >
             <option value="all">Todos os vídeos</option>
             {videos.map(video => (
@@ -296,7 +296,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
           <select
             value={timeFilter}
             onChange={(e) => setTimeFilter(e.target.value as TimeFilter)}
-            className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus-ring-[#00DBD9]"
           >
             <option value="24h">Últimas 24 horas</option>
             <option value="2d">Últimos 2 dias</option>
@@ -317,7 +317,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
               type="date"
               value={customStartDate}
               onChange={(e) => setCustomStartDate(e.target.value)}
-              className="px-3 py-2 bg-gray-900 border border-gray-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="px-3 py-2 bg-gray-900 border border-gray-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-[#00DBD9]"
             />
           </div>
           <div className="flex items-center space-x-2">
@@ -326,7 +326,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
               type="date"
               value={customEndDate}
               onChange={(e) => setCustomEndDate(e.target.value)}
-              className="px-3 py-2 bg-gray-900 border border-gray-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="px-3 py-2 bg-gray-900 border border-gray-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-[#00DBD9]"
             />
           </div>
         </div>
@@ -336,7 +336,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
       <div className="p-6 rounded-xl border border-gray-800">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <h3 className="text-lg font-semibold text-white flex items-center">
-            <Clock className="mr-2 text-red-500" size={20} />
+            <Clock className="mr-2 text-[#00DBD9]" size={20} />
             Cliques por Hora - Dia Específico
           </h3>
           <div className="flex items-center gap-4">
@@ -346,12 +346,12 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-[#00DBD9]"
               />
             </div>
             <button
               onClick={downloadDailyHoursCSV}
-              className="flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm"
+              className="flex items-center px-3 py-2 bg-[#00DBD9] hover:bg-[#5ff2ef] text-black rounded-lg transition-colors text-sm"
             >
               <Download size={16} className="mr-2" />
               CSV
@@ -361,7 +361,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
         
         {loadingDay ? (
           <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00DBD9]"></div>
           </div>
         ) : (
           <>
@@ -379,7 +379,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
                       color: '#F3F4F6'
                     }} 
                   />
-                  <Bar dataKey="clicks" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="clicks" fill="#00DBD9" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -392,14 +392,14 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
 
       {loading ? (
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00DBD9]"></div>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Gráfico de Cliques */}
           <div className="p-6 rounded-xl border border-gray-800">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-              <TrendingUp className="mr-2 text-red-500" size={20} />
+              <TrendingUp className="mr-2 text-[#00DBD9]" size={20} />
               Cliques {timeFilter === '24h' ? 'por Hora' : 'por Dia'}
             </h3>
             <div className="h-64">
@@ -416,7 +416,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
                       color: '#F3F4F6'
                     }} 
                   />
-                  <Bar dataKey="clicks" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="clicks" fill="#00DBD9" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -425,7 +425,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
           {/* Gráfico de Dispositivos */}
           <div className="p-6 rounded-xl border border-gray-800">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-              <Monitor className="mr-2 text-red-500" size={20} />
+              <Monitor className="mr-2 text-[#00DBD9]" size={20} />
               Dispositivos
             </h3>
             <div className="h-64">
@@ -474,13 +474,13 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
           <div className="lg:col-span-2 p-6 rounded-xl border border-gray-800">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white flex items-center">
-                <Globe className="mr-2 text-red-500" size={20} />
+                <Globe className="mr-2 text-[#00DBD9]" size={20} />
                 Países ({countryData.length} total)
               </h3>
               <div className="flex items-center gap-2">
                 <button
                   onClick={downloadCountriesCSV}
-                  className="flex items-center px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm"
+                  className="flex items-center px-3 py-1 bg-[#00DBD9] hover:bg-[#7ffffd] text-black rounded-lg transition-colors text-sm"
                 >
                   <Download size={16} className="mr-1" />
                   CSV
@@ -526,7 +526,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ videos }) => {
                         </div>
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <span className="bg-red-900 text-red-300 px-2 py-1 rounded-full text-sm font-medium">
+                        <span className="bg-[#00DBD9] text-black px-2 py-1 rounded-full text-sm font-medium">
                           {country.clicks}
                         </span>
                       </td>

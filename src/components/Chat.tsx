@@ -67,39 +67,44 @@ const DEFAULT_THEME: Required<Omit<ChatTheme, "borderRadiusPx">> & {
   borderRadiusPx: 16,
 };
 
-/* ================== Utils para Avatar ================== */
 const AVATAR_PALETTE = [
-  "#40BAC4", // teal OSF vibe
-  "#A78BFA", // purple
-  "#F59E0B", // amber
-  "#10B981", // emerald
-  "#EF4444", // red
-  "#3B82F6", // blue
-  "#F472B6", // pink
-  "#22D3EE", // cyan
-  "#84CC16", // lime
-  "#FB923C", // orange
+  "#40BAC4",
+  "#A78BFA",
+  "#F59E0B",
+  "#10B981",
+  "#EF4444",
+  "#3B82F6",
+  "#F472B6",
+  "#22D3EE",
+  "#84CC16",
+  "#FB923C",
 ];
 
 function hashString(str: string): number {
   let h = 0;
   for (let i = 0; i < str.length; i++) {
     h = (h << 5) - h + str.charCodeAt(i);
-    h |= 0; // 32-bit
+    h |= 0;
   }
   return Math.abs(h);
 }
+
 function pickAvatarColor(name: string): string {
   if (!name) return AVATAR_PALETTE[0];
   const idx = hashString(name.trim().toLowerCase()) % AVATAR_PALETTE.length;
   return AVATAR_PALETTE[idx];
 }
+
 function getInitial(name: string): string {
   const n = (name || "").trim();
   return n ? n[0].toUpperCase() : "?";
 }
 
-/* ================== PRESENTATIONAL (sem hooks) ================== */
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
 interface ChatBodyProps {
   messages: ChatMessage[];
   pinnedMessage: PinnedMessage | null;
@@ -128,7 +133,6 @@ const ChatBody: React.FC<ChatBodyProps> = React.memo(
   }) => {
     return (
       <>
-        {/* Lista de mensagens */}
         <div
           className="flex-1 overflow-y-auto p-4 space-y-4"
           style={{ backgroundColor: theme.bodyBg }}
@@ -162,7 +166,6 @@ const ChatBody: React.FC<ChatBodyProps> = React.memo(
                       >
                         {pinnedMessage.message}
                       </p>
-
                       <a
                         href={pinnedMessage.link}
                         target="_blank"
@@ -196,11 +199,60 @@ const ChatBody: React.FC<ChatBodyProps> = React.memo(
           )}
 
           {messages.map((m) => {
+            if (m.isModerator) {
+              return (
+                <div
+                  key={m.id}
+                  className="p-3 rounded-xl"
+                  style={{
+                    backgroundColor: theme.pinnedBg,
+                    border: `1px solid ${theme.pinnedBorder}`,
+                  }}
+                >
+                  <div className="flex items-start gap-2">
+                    <div className="min-w-0 flex-1">
+                      <span
+                        className="text-[11px] block mb-1"
+                        style={{ color: theme.nameModeradorColor }}
+                      >
+                        Moderador
+                      </span>
+                      {m.link ? (
+                        <>
+                          <p
+                            className="text-sm leading-snug break-words"
+                            style={{ color: theme.messageColor }}
+                          >
+                            {m.message}
+                          </p>
+                          <a
+                            href={m.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm leading-snug break-words hover:underline"
+                            style={{ color: theme.nameModeradorColor }}
+                          >
+                            {m.link}
+                          </a>
+                        </>
+                      ) : (
+                        <p
+                          className="text-sm leading-snug break-words"
+                          style={{ color: theme.messageColor }}
+                        >
+                          {m.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
             const bg = pickAvatarColor(m.username || "");
             const initial = getInitial(m.username || "");
             return (
               <div key={m.id} className="flex items-center gap-3">
-                {/* Avatar com cor + inicial */}
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
                   style={{
@@ -217,7 +269,6 @@ const ChatBody: React.FC<ChatBodyProps> = React.memo(
                   </span>
                 </div>
 
-                {/* Texto */}
                 <div className="min-w-0">
                   <div
                     className="text-[10px] leading-none mb-1"
@@ -239,7 +290,6 @@ const ChatBody: React.FC<ChatBodyProps> = React.memo(
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Rodapé com input + botão enviar */}
         <form
           onSubmit={onSubmitMessage}
           className="px-3 py-8"
@@ -303,7 +353,6 @@ const ChatBody: React.FC<ChatBodyProps> = React.memo(
 );
 ChatBody.displayName = "ChatBody";
 
-/* ================== CONTAINER (com hooks) ================== */
 const Chat: React.FC<ChatProps> = ({
   videoId,
   isMobile = false,
@@ -312,11 +361,10 @@ const Chat: React.FC<ChatProps> = ({
   const THEME = { ...DEFAULT_THEME, ...theme };
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [pinnedMessage, setPinnedMessage] = useState<PinnedMessage | null>(
-    null
-  );
+  const [pinnedMessage, setPinnedMessage] = useState<PinnedMessage | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [showUsernameForm, setShowUsernameForm] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const [muteMessage, setMuteMessage] = useState("");
@@ -365,10 +413,16 @@ const Chat: React.FC<ChatProps> = ({
 
   useEffect(() => {
     const savedUsername = localStorage.getItem("chatUsername");
-    if (savedUsername) {
+    const savedEmail = localStorage.getItem("chatEmail");
+
+    if (savedUsername && savedEmail) {
       setUsername(savedUsername);
+      setEmail(savedEmail);
       setShowUsernameForm(false);
       checkMuteStatus(savedUsername);
+    } else {
+      if (savedUsername) setUsername(savedUsername);
+      if (savedEmail) setEmail(savedEmail);
     }
   }, []);
 
@@ -432,13 +486,26 @@ const Chat: React.FC<ChatProps> = ({
 
   const handleUsernameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (username.trim()) {
-      const trimmedUsername = username.trim();
-      localStorage.setItem("chatUsername", trimmedUsername);
-      setShowUsernameForm(false);
-      checkMuteStatus(trimmedUsername);
-      setTimeout(() => inputRef.current?.focus(), 0);
+
+    if (!username.trim()) {
+      alert("Por favor, insira seu nome.");
+      return;
     }
+
+    if (!email.trim() || !isValidEmail(email.trim())) {
+      alert("Por favor, insira um e-mail válido.");
+      return;
+    }
+
+    const trimmedUsername = username.trim();
+    const trimmedEmail = email.trim();
+
+    localStorage.setItem("chatUsername", trimmedUsername);
+    localStorage.setItem("chatEmail", trimmedEmail);
+
+    setShowUsernameForm(false);
+    checkMuteStatus(trimmedUsername);
+    setTimeout(() => inputRef.current?.focus(), 0);
   };
 
   const handleMessageSubmit = async (e: React.FormEvent) => {
@@ -452,7 +519,9 @@ const Chat: React.FC<ChatProps> = ({
       await addDoc(collection(db, "chatMessages"), {
         videoId,
         username,
+        email,
         message: messageToSend,
+        isModerator: false,
         timestamp: new Date(),
       });
       inputRef.current?.focus();
@@ -470,7 +539,6 @@ const Chat: React.FC<ChatProps> = ({
     []
   );
 
-  /* ================== TELA DE USERNAME ================== */
   if (showUsernameForm) {
     return (
       <div
@@ -484,7 +552,7 @@ const Chat: React.FC<ChatProps> = ({
         }}
       >
         <div className="text-center w-full max-w-sm">
-          <MessageCircle className="mx-auto h-12 w-12 mb-4" color="#40BAC4" />
+          <MessageCircle className="mx-auto h-12 w-12 mb-4" color="#00DBD9" />
           <h3
             className="text-xl font-semibold mb-4"
             style={{ color: THEME.messageColor }}
@@ -497,7 +565,7 @@ const Chat: React.FC<ChatProps> = ({
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Ingresa tu nombre"
-              className="w-full px-4 py-3 rounded-lg placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-4 py-3 rounded-lg placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-300"
               style={{
                 backgroundColor: "#0f0f0f",
                 color: "#ffffff",
@@ -506,10 +574,23 @@ const Chat: React.FC<ChatProps> = ({
               maxLength={20}
               required
             />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Ingresa tu correo electrónico"
+              className="w-full px-4 py-3 rounded-lg placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-300"
+              style={{
+                backgroundColor: "#0f0f0f",
+                color: "#ffffff",
+                border: `1px solid ${THEME.borderColor}`,
+              }}
+              required
+            />
             <button
               type="submit"
-              className="w-full text-white font-medium py-3 px-4 rounded-lg transition"
-              style={{ backgroundColor: "#40BAC4" }}
+              className="w-full text-black font-medium py-3 px-4 rounded-lg transition"
+              style={{ backgroundColor: "#00DBD9" }}
             >
               Unirse al chat
             </button>
@@ -519,7 +600,6 @@ const Chat: React.FC<ChatProps> = ({
     );
   }
 
-  /* ================== LAYOUT PRINCIPAL ================== */
   const containerHeight = isMobile ? "min(50vh, 620px)" : "min(82vh, 900px)";
 
   return (
@@ -533,7 +613,6 @@ const Chat: React.FC<ChatProps> = ({
         overflow: "hidden",
       }}
     >
-      {/* Header */}
       <div
         className={isMobile ? "p-3" : "p-4"}
         style={{
@@ -566,7 +645,6 @@ const Chat: React.FC<ChatProps> = ({
         </div>
       </div>
 
-      {/* Corpo do chat */}
       <ChatBody
         messages={messages}
         pinnedMessage={pinnedMessage}

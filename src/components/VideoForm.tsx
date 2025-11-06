@@ -660,7 +660,7 @@ const VideoForm: React.FC<VideoFormProps> = ({ video, onClose, allVideos }) => {
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg flex items-center transition duration-200"
+              className="px-6 py-3 bg-[#00DBD9] hover:bg-[#7afffd] disabled:bg-[#8cfcfa] text-black rounded-lg flex items-center transition duration-200"
             >
               {loading ? (
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>

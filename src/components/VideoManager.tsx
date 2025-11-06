@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Eye, Download } from 'lucide-react';
-import { collection, onSnapshot, query, orderBy, getDocs, where } from 'firebase/firestore';
+import { Plus, Edit, Eye, Download, Trash2 } from 'lucide-react';
+import { collection, onSnapshot, query, orderBy, getDocs, where, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Video, ChatMessage } from '../types';
 import VideoForm from './VideoForm';
@@ -8,14 +8,18 @@ import Analytics from './Analytics';
 import ChatModeration from './ChatModeration';
 import FeatureButtonManager from './FeatureButtonManager';
 import PinnedMessageManager from './PinnedMessageManager';
+import ModeratorChatSender from './ModeratorChatSender';
 
 
 const VideoManager: React.FC = () => {
   const [videos, setVideos] = useState<Video[]>([]);
+  const [activeVideos, setActiveVideos] = useState<Video[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingVideo, setEditingVideo] = useState<Video | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'videos' | 'analytics' | 'moderation' | 'buttons' | 'pinned'>('videos');
+  const [activeTab, setActiveTab] = useState<'videos' | 'analytics' | 'moderation' | 'buttons' | 'pinned' | 'moderatorChat'>('videos');
+  const [deletingVideoId, setDeletingVideoId] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     const q = query(collection(db, 'videos'), orderBy('createdAt', 'desc'));
@@ -27,6 +31,7 @@ const VideoManager: React.FC = () => {
         updatedAt: doc.data().updatedAt?.toDate()
       })) as Video[];
       setVideos(videosData);
+      setActiveVideos(videosData.filter(v => v.isActive));
       setLoading(false);
     });
 
@@ -53,9 +58,9 @@ const VideoManager: React.FC = () => {
       }
 
       const csvContent = [
-        'Username,Message,Timestamp',
-        ...messages.map(msg => 
-          `"${msg.username}","${msg.message.replace(/"/g, '""')}","${msg.timestamp?.toLocaleString() || ''}"`
+        'Username,Email,Message,Link,IsModerator,Timestamp',
+        ...messages.map(msg =>
+          `"${msg.username}","${msg.email || ''}","${msg.message.replace(/"/g, '""')}","${msg.link || ''}","${msg.isModerator ? 'Sim' : 'Não'}","${msg.timestamp?.toLocaleString() || ''}"`
         )
       ].join('\n');
 
@@ -84,6 +89,92 @@ const VideoManager: React.FC = () => {
     setEditingVideo(null);
   };
 
+  const handleDeleteVideo = async (videoId: string) => {
+    setDeletingVideoId(videoId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingVideoId) return;
+
+    try {
+      // Deletar o vídeo
+      await deleteDoc(doc(db, 'videos', deletingVideoId));
+
+      // Deletar todas as mensagens do chat relacionadas
+      const messagesQuery = query(
+        collection(db, 'chatMessages'),
+        where('videoId', '==', deletingVideoId)
+      );
+      const messagesSnapshot = await getDocs(messagesQuery);
+      await Promise.all(
+        messagesSnapshot.docs.map(msgDoc => deleteDoc(msgDoc.ref))
+      );
+
+      // Deletar analytics
+      const analyticsQuery = query(
+        collection(db, 'analytics'),
+        where('videoId', '==', deletingVideoId)
+      );
+      const analyticsSnapshot = await getDocs(analyticsQuery);
+      await Promise.all(
+        analyticsSnapshot.docs.map(analyticsDoc => deleteDoc(analyticsDoc.ref))
+      );
+
+      // Deletar feature buttons
+      const buttonsQuery = query(
+        collection(db, 'featureButtons'),
+        where('videoId', '==', deletingVideoId)
+      );
+      const buttonsSnapshot = await getDocs(buttonsQuery);
+      await Promise.all(
+        buttonsSnapshot.docs.map(buttonDoc => deleteDoc(buttonDoc.ref))
+      );
+
+      // Deletar mensagens fixadas
+      const pinnedQuery = query(
+        collection(db, 'pinnedMessages'),
+        where('videoId', '==', deletingVideoId)
+      );
+      const pinnedSnapshot = await getDocs(pinnedQuery);
+      await Promise.all(
+        pinnedSnapshot.docs.map(pinnedDoc => deleteDoc(pinnedDoc.ref))
+      );
+
+      // Deletar moderações de chat
+      const moderationQuery = query(
+        collection(db, 'chatModeration'),
+        where('videoId', '==', deletingVideoId)
+      );
+      const moderationSnapshot = await getDocs(moderationQuery);
+      await Promise.all(
+        moderationSnapshot.docs.map(modDoc => deleteDoc(modDoc.ref))
+      );
+
+      // Deletar likes
+      const likesQuery = query(
+        collection(db, 'videoLikes'),
+        where('videoId', '==', deletingVideoId)
+      );
+      const likesSnapshot = await getDocs(likesQuery);
+      await Promise.all(
+        likesSnapshot.docs.map(likeDoc => deleteDoc(likeDoc.ref))
+      );
+
+      alert('Vídeo e todos os dados relacionados foram deletados com sucesso!');
+      setShowDeleteModal(false);
+      setDeletingVideoId(null);
+    } catch (error) {
+      console.error('Erro ao deletar vídeo:', error);
+      alert('Erro ao deletar vídeo. Tente novamente.');
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setDeletingVideoId(null);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -99,7 +190,7 @@ const VideoManager: React.FC = () => {
         {activeTab === 'videos' && (
           <button
             onClick={() => setShowForm(true)}
-            className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg flex items-center transition duration-200"
+            className="bg-[#00DBD9] hover:bg-cyan-500 text-black px-6 py-3 rounded-lg flex items-center transition duration-200"
           >
             <Plus className="mr-2" size={20} />
             Novo Vídeo
@@ -115,51 +206,61 @@ const VideoManager: React.FC = () => {
               onClick={() => setActiveTab('videos')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'videos'
-                  ? 'border-red-500 text-red-500'
+                  ? 'border-[#00DBD9] text-[#00DBD9]'
                   : 'border-transparent text-gray-400 hover:text-white hover:border-gray-300'
               }`}
             >
               Vídeos
             </button>
             <button
-              onClick={() => setActiveTab('analytics')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'analytics'
-                  ? 'border-red-500 text-red-500'
-                  : 'border-transparent text-gray-400 hover:text-white hover:border-gray-300'
-              }`}
-            >
-              Analytics
-            </button>
-            <button
               onClick={() => setActiveTab('moderation')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'moderation'
-                  ? 'border-red-500 text-red-500'
+                  ? 'border-[#00DBD9] text-[#00DBD9]'
                   : 'border-transparent text-gray-400 hover:text-white hover:border-gray-300'
               }`}
             >
               Moderação de Chat
             </button>
             <button
+              onClick={() => setActiveTab('moderatorChat')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'moderatorChat'
+                  ? 'border-[#00DBD9] text-[#00DBD9]'
+                  : 'border-transparent text-gray-400 hover:text-white hover:border-gray-300'
+              }`}
+            >
+              Enviar no Chat
+            </button>
+            <button
+              onClick={() => setActiveTab('pinned')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'pinned'
+                  ? 'border-[#00DBD9] text-[#00DBD9]'
+                  : 'border-transparent text-gray-400 hover:text-white hover:border-gray-300'
+              }`}
+            >
+              Mensagens Fixadas
+            </button>
+            <button
               onClick={() => setActiveTab('buttons')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'buttons'
-                  ? 'border-red-500 text-red-500'
+                  ? 'border-[#00DBD9] text-[#00DBD9]'
                   : 'border-transparent text-gray-400 hover:text-white hover:border-gray-300'
               }`}
             >
               Feature Buttons
             </button>
             <button
-              onClick={() => setActiveTab('pinned')}
+              onClick={() => setActiveTab('analytics')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'pinned'
-                  ? 'border-red-500 text-red-500'
+                activeTab === 'analytics'
+                  ? 'border-[#00DBD9] text-[#00DBD9]'
                   : 'border-transparent text-gray-400 hover:text-white hover:border-gray-300'
               }`}
             >
-              Mensagens Fixadas
+              Analytics
             </button>
           </nav>
         </div>
@@ -240,7 +341,7 @@ const VideoManager: React.FC = () => {
                         >
                           <Edit size={18} />
                         </button>
-                        
+
                         <button
                           onClick={() => downloadChatAsCSV(video.id, video.title)}
                           className="text-yellow-400 hover:text-yellow-300 p-1 rounded transition-colors"
@@ -257,6 +358,13 @@ const VideoManager: React.FC = () => {
                         >
                           <Eye size={18} />
                         </a>
+                        <button
+                          onClick={() => handleDeleteVideo(video.id)}
+                          className="text-red-400 hover:text-red-300 p-1 rounded transition-colors"
+                          title="Deletar Vídeo"
+                        >
+                          <Trash2 size={18} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -274,11 +382,53 @@ const VideoManager: React.FC = () => {
 
       {activeTab === 'analytics' && <Analytics videos={videos} />}
 
-      {activeTab === 'moderation' && <ChatModeration videos={videos} />}
+      {activeTab === 'moderation' && <ChatModeration videos={activeVideos} />}
 
-      {activeTab === 'buttons' && <FeatureButtonManager videos={videos} />}
+      {activeTab === 'buttons' && <FeatureButtonManager videos={activeVideos} />}
 
-      {activeTab === 'pinned' && <PinnedMessageManager videos={videos} />}
+      {activeTab === 'pinned' && <PinnedMessageManager videos={activeVideos} />}
+
+      {activeTab === 'moderatorChat' && <ModeratorChatSender videos={activeVideos} />}
+
+      {/* Modal de Confirmação de Deleção */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-md border border-gray-800">
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-white mb-4">Confirmar Deleção</h3>
+              <p className="text-gray-300 mb-6">
+                Tem certeza que deseja deletar este vídeo? Esta ação irá deletar:
+              </p>
+              <ul className="text-gray-400 mb-6 space-y-2 list-disc list-inside">
+                <li>O vídeo</li>
+                <li>Todas as mensagens do chat</li>
+                <li>Todos os dados de analytics</li>
+                <li>Todos os feature buttons</li>
+                <li>Todas as mensagens fixadas</li>
+                <li>Todas as moderações de chat</li>
+                <li>Todos os likes</li>
+              </ul>
+              <p className="text-red-400 font-semibold mb-6">
+                Esta ação não pode ser desfeita!
+              </p>
+              <div className="flex justify-end space-x-4">
+                <button
+                  onClick={cancelDelete}
+                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                >
+                  Deletar Tudo
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

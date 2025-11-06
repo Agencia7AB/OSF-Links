@@ -27,7 +27,10 @@ export interface ChatMessage {
   id: string;
   videoId: string;
   username: string;
+  email?: string;
   message: string;
+  link?: string;
+  isModerator?: boolean;
   timestamp: Date;
 }
 

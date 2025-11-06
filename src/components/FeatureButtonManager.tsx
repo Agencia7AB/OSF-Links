@@ -138,7 +138,7 @@ const FeatureButtonManager: React.FC<FeatureButtonManagerProps> = ({ videos }) =
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-white flex items-center">
-          <Plus className="mr-3 text-red-500" />
+          <Plus className="mr-3 text-[#00DBD9]" />
           Gerenciar Feature Buttons
         </h2>
         {!showForm && (
@@ -154,7 +154,7 @@ const FeatureButtonManager: React.FC<FeatureButtonManagerProps> = ({ videos }) =
                 textColor: '#000000'
               });
             }}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+            className="bg-[#00DBD9] hover:bg-[#97fffd] text-black px-4 py-2 rounded-lg transition-colors"
           >
             Novo Feature Button
           </button>
@@ -325,7 +325,7 @@ const FeatureButtonManager: React.FC<FeatureButtonManagerProps> = ({ videos }) =
               </button>
               <button
                 type="submit"
-                className="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                className="flex items-center px-4 py-2 bg-[#00DBD9] hover:bg-[#90fdfb] text-black rounded-lg transition-colors"
               >
                 <Save size={16} className="mr-2" />
                 {editingId ? 'Atualizar' : 'Criar'}

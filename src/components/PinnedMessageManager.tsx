@@ -124,7 +124,7 @@ const PinnedMessageManager: React.FC<PinnedMessageManagerProps> = ({ videos }) =
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-white flex items-center">
-          <Pin className="mr-3 text-red-500" />
+          <Pin className="mr-3 text-[#00DBD9]" />
           Gerenciar Mensagens Fixadas
         </h2>
         {!showForm && (
@@ -134,7 +134,7 @@ const PinnedMessageManager: React.FC<PinnedMessageManagerProps> = ({ videos }) =
               setEditingId(null);
               setFormData({ message: '', link: '', isActive: true });
             }}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+            className="bg-[#00DBD9] hover:bg-[#80f5f3] text-black px-4 py-2 rounded-lg transition-colors"
           >
             Nova Mensagem Fixada
           </button>
@@ -148,7 +148,7 @@ const PinnedMessageManager: React.FC<PinnedMessageManagerProps> = ({ videos }) =
         <select
           value={selectedVideoId}
           onChange={(e) => setSelectedVideoId(e.target.value)}
-          className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+          className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#00DBD9]"
         >
           {videos.map(video => (
             <option key={video.id} value={video.id}>
@@ -184,7 +184,7 @@ const PinnedMessageManager: React.FC<PinnedMessageManagerProps> = ({ videos }) =
               <textarea
                 value={formData.message}
                 onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#00DBD9]"
                 rows={3}
                 required
                 maxLength={500}
@@ -199,7 +199,7 @@ const PinnedMessageManager: React.FC<PinnedMessageManagerProps> = ({ videos }) =
                 type="url"
                 value={formData.link}
                 onChange={(e) => setFormData(prev => ({ ...prev, link: e.target.value }))}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#00DBD9]"
                 placeholder="https://exemplo.com"
               />
             </div>
@@ -210,7 +210,7 @@ const PinnedMessageManager: React.FC<PinnedMessageManagerProps> = ({ videos }) =
                 id="isActive"
                 checked={formData.isActive}
                 onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
-                className="mr-3 h-4 w-4 text-red-600 bg-gray-800 border-gray-700 rounded focus:ring-red-500"
+                className="mr-3 h-4 w-4 text-red-600 bg-gray-800 border-gray-700 rounded focus:ring-[#00DBD9]"
               />
               <label htmlFor="isActive" className="text-gray-400">
                 Mensagem ativa (visível no chat)
@@ -231,7 +231,7 @@ const PinnedMessageManager: React.FC<PinnedMessageManagerProps> = ({ videos }) =
               </button>
               <button
                 type="submit"
-                className="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                className="flex items-center px-4 py-2 bg-[#00DBD9] hover:bg-[#91f6f4] text-black rounded-lg transition-colors"
               >
                 <Save size={16} className="mr-2" />
                 {editingId ? 'Atualizar' : 'Criar'}

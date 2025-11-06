@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { ChatMessage, ChatModeration as ChatModerationType, Video } from '../types';
-import { Trash2, VolumeX, Clock, MessageCircle, Volume2 } from 'lucide-react';
+import { Trash2, VolumeX, MessageCircle, Volume2 } from 'lucide-react';
 
 interface ChatModerationProps {
   videos: Video[];
@@ -82,20 +82,19 @@ const ChatModeration: React.FC<ChatModerationProps> = ({ videos }) => {
     }
   };
 
-  const muteUser = async (username: string, minutes?: number) => {
+  const muteUser = async (username: string) => {
     try {
-      const mutedUntil = minutes ? new Date(Date.now() + minutes * 60000) : null;
       const docRef = doc(db, 'chatModeration', `${selectedVideoId}_${username}`);
 
       await setDoc(docRef, {
         videoId: selectedVideoId,
         username,
-        mutedUntil,
-        permanentlyMuted: !minutes,
+        mutedUntil: null,
+        permanentlyMuted: true,
         createdAt: new Date()
       });
 
-      alert(`Usuário ${username} foi silenciado ${minutes ? `por ${minutes} minutos` : 'permanentemente'}`);
+      alert(`Usuário ${username} foi silenciado permanentemente`);
     } catch (error) {
       console.error('Erro ao silenciar usuário:', error);
       alert('Erro ao silenciar usuário');
@@ -145,7 +144,7 @@ const ChatModeration: React.FC<ChatModerationProps> = ({ videos }) => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-white flex items-center">
-          <MessageCircle className="mr-3 text-red-500" />
+          <MessageCircle className="mr-3 text-[#00DBD9]" />
           Moderação de Chat
         </h2>
       </div>
@@ -224,22 +223,14 @@ const ChatModeration: React.FC<ChatModerationProps> = ({ videos }) => {
                         </button>
 
                         {!muted ? (
-                          <>
-                            <button
-                              onClick={() => muteUser(message.username, 5)}
-                              className="p-1.5 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors"
-                              title="Silenciar por 5 minutos"
-                            >
-                              <Clock size={14} />
-                            </button>
-                            <button
-                              onClick={() => muteUser(message.username)}
-                              className="p-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded transition-colors"
-                              title="Silenciar permanentemente"
-                            >
-                              <VolumeX size={14} />
-                            </button>
-                          </>
+                          <button
+                            onClick={() => muteUser(message.username)}
+                            className="flex items-center px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs transition-colors"
+                            title="Silenciar permanentemente"
+                          >
+                            <VolumeX size={14} className="mr-1" />
+                            Silenciar
+                          </button>
                         ) : (
                           <button
                             onClick={() => unmuteUser(message.username)}

@@ -26,7 +26,7 @@ const LoginForm: React.FC = () => {
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
       <div className="p-8 rounded-xl shadow-2xl w-full max-w-md border border-gray-800">
         <div className="text-center mb-8">
-          <LogIn className="mx-auto h-12 w-12 text-red-500 mb-4" />
+          <LogIn className="mx-auto h-12 w-12 text-[#00DBD9] mb-4" />
           <h2 className="text-3xl font-bold text-white">Admin Login</h2>
           <p className="text-gray-400 mt-2">Entre com suas credenciais</p>
         </div>
@@ -41,7 +41,7 @@ const LoginForm: React.FC = () => {
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00DBD9] focus:border-transparent"
               placeholder="admin@example.com"
               required
             />
@@ -57,7 +57,7 @@ const LoginForm: React.FC = () => {
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent pr-12"
+                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00DBD9] focus:border-transparent pr-12"
                 placeholder="••••••••"
                 required
               />
@@ -78,7 +78,7 @@ const LoginForm: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white font-medium py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center"
+            className="w-full bg-[#00DBD9] hover:bg-[#9dfffd] disabled:bg-[#6afcfa] text-black font-medium py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center"
           >
             {loading ? (
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
